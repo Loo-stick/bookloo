@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="accueil">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html">Administration</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Chercher des scans</h1>
+    <p class="titres" id="intro">La recherche libre interroge les trackers sans passer par une fiche.</p>
+    <div class="recherche">
+      <!-- Titre ou auteur : « Stephen King » tape dans un moteur de titres rend des
+           livres SUR lui, pas DE lui. Les deux catalogues savent repondre, mais par une
+           autre porte — encore faut-il leur dire laquelle. -->
+      <label class="visuellement-cache" for="mode">Chercher par</label>
+      <select id="mode">
+        <option value="titre">Titre</option>
+        <option value="auteur">Auteur</option>
+      </select>
+      <input type="text" id="q" placeholder="One Piece, Naruto, Lanfeust…" autocomplete="off">
+      <button id="chercher" class="principal">Chercher une oeuvre</button>
+      <button id="chercher-libre">Recherche libre</button>
+    </div>
+    <h2 id="titre-resultats">Resultats</h2>
+    <div id="resultats"><div class="vide">Tapez un titre pour commencer.</div></div>
+  </main>
+  <script src="/formats.js"></script>
+  <script src="/panneau.js"></script>
+  <script src="/fermeture.js"></script>
+  <script src="/lecture.js"></script>
+  <script src="/liseuse.js"></script>
+  <script src="/ecoute.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
