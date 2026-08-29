@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compte — Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="compte">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html" data-role="admin">Administration</a>
+      <a href="/logs.html" data-role="admin">Log</a>
+      <a href="/changelog.html">Nouveautes</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Vos cles</h1>
+    <p class="titres">Elles sont chiffrees avec une cle derivee de votre mot de passe et ne quittent jamais le serveur. Book Loo Store ne peut pas vous les reafficher : il ne sait que dire si elles sont en place. « Tester mes cles » interroge chaque service avec la cle enregistree — sans rien deposer nulle part.</p>
+    <div id="cles"></div>
+    <div class="barre-actions">
+      <button id="enregistrer" class="principal">Enregistrer</button>
+      <button id="tester">Tester mes cles</button>
+    </div>
+
+    <h2>Mot de passe</h2>
+    <p class="titres">Changer de mot de passe re-enveloppe la cle de chiffrement. Vos six cles ne sont pas retouchees, mais toutes vos sessions se ferment.</p>
+    <label for="mdp-ancien">Mot de passe actuel</label>
+    <input type="password" id="mdp-ancien">
+    <label for="mdp-nouveau">Nouveau mot de passe (12 caracteres minimum)</label>
+    <input type="password" id="mdp-nouveau">
+    <p><button id="changer-mdp">Changer le mot de passe</button></p>
+
+    <div id="sortie"></div>
+  </main>
+  <script src="/app.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

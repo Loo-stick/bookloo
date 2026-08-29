@@ -1,0 +1,1070 @@
+/* Mangaloo — feuille unique, servie telle quelle. Aucun build, aucun CDN : c'est ce
+   qui rend la CSP stricte tenable sans effort.
+
+   LA COULEUR PORTE DU SENS ICI, elle ne decore pas :
+     chaud  = en cache, disponible tout de suite
+     froid  = pas en cache, il faudra attendre
+     creux  = non verifie, on ne sait pas — et on le dit
+   Jamais la couleur seule : chaque etat a aussi une forme et un libelle. */
+
+:root {
+  --encre:      #12141c;
+  --surface:    #1a1d28;
+  --surface-2:  #222634;
+  --trait:      #2e3342;
+  --papier:     #ece7dc;
+  --papier-mat: #9aa0b0;
+
+  --chaud:      #f0a03c;  /* en cache */
+  --froid:      #5f88a8;  /* pas en cache */
+  --creux:      #6b7185;  /* non verifie */
+  --alerte:     #e0614a;
+
+  --prose: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mesure: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* --- L'ACCENT DE MARQUE, distinct des couleurs d'ETAT ---------------------
+     `--chaud`, `--froid` et `--creux` VEULENT DIRE quelque chose : en cache, pas en
+     cache, non verifie. Les employer aussi comme couleur de marque melangerait un
+     sens et une decoration, et le jour ou l'on changerait l'un on abimerait l'autre.
+     D'ou un accent a part, qui ne signifie rien sinon « ceci est une action ». */
+  --accent:     #e6485c;
+  --accent-2:   #ff6274;
+  --accent-encre: #ffffff;
+  --lueur:      rgba(230, 72, 92, 0.32);
+
+  /* Le verre : une surface qui laisse deviner le fond au lieu de le masquer. */
+  --verre:      rgba(26, 29, 40, 0.72);
+  --ombre:      0 18px 44px rgba(0, 0, 0, 0.45);
+
+  --r: 3px;
+  /* Les cartes et panneaux respirent avec un rayon large ; les puces gardent `--r`. */
+  --r-grand: 18px;
+  --r-moyen: 12px;
+}
+
+/* THEME CLAIR, sur demande explicite seulement.
+   Pas de `prefers-color-scheme` : cette interface a ete dessinee sombre, et basculer
+   quelqu'un sans qu'il l'ait demande abimerait des contrastes penses pour l'encre. */
+:root[data-theme="clair"] {
+  --encre:      #f2f0ea;
+  --surface:    #ffffff;
+  --surface-2:  #f7f5ef;
+  --trait:      #ddd8cc;
+  --papier:     #23262f;
+  --papier-mat: #6b7185;
+  --verre:      rgba(255, 255, 255, 0.78);
+  --ombre:      0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+/* Une regle d'AUTEUR ecrase toujours le `display: none` que le navigateur applique a
+   `[hidden]`, quelle que soit la specificite. `.release` etant en `display: grid`, poser
+   l'attribut ne masquait rien : les filtres changeaient d'etat sans effet visible.
+   Cette ligne existe pour que ca ne se refasse pas. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  /* DEUX LAVIS TRES DISCRETS, et rien de plus. Ils donnent de la profondeur sans
+     jamais concurrencer une couverture ni une pastille d'etat — a 6 % d'opacite on
+     les sent, on ne les voit pas. */
+  background:
+    radial-gradient(circle at 12% 8%, rgba(230, 72, 92, 0.06), transparent 38%),
+    radial-gradient(circle at 88% 0%, rgba(95, 136, 168, 0.05), transparent 42%),
+    var(--encre);
+  background-attachment: fixed;
+  color: var(--papier);
+  font-family: var(--prose);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--chaud); }
+
+/* ---------- ossature ---------- */
+
+.bandeau {
+  display: flex; align-items: baseline; gap: 1.5rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--trait);
+  /* DU VERRE, pas un bandeau opaque : le contenu qui glisse dessous reste devine, ce qui
+     dit ou l'on en est dans la page sans ajouter le moindre element. */
+  background: var(--verre);
+  backdrop-filter: blur(14px);
+  position: sticky; top: 0; z-index: 5;
+}
+.marque {
+  font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  font-size: 0.82rem; color: var(--papier); text-decoration: none;
+}
+/* L'ACCENT DE MARQUE, la aussi. `--chaud` veut dire « en cache » : la marque n'a pas a
+   porter un etat de cache, et deux rouges valent mieux qu'un rouge et un orange sans
+   rapport. */
+.marque span { color: var(--accent); }
+.bandeau nav { display: flex; gap: 1.1rem; margin-left: auto; }
+.bandeau nav a { color: var(--papier-mat); text-decoration: none; font-size: 0.85rem; }
+.bandeau nav a:hover, .bandeau nav a:focus-visible { color: var(--papier); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 1.75rem 1.5rem 5rem; }
+
+/* LE TITRE PORTE LA PAGE. A 1,5 rem et 650 de graisse il ne se distinguait pas du
+   corps ; l'interface paraissait plate faute de hierarchie, pas faute de couleur. */
+h1 {
+  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.4rem);
+  font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+  margin: 0 0 0.5rem;
+}
+/* La barre d'accent devant un titre de section : elle ancre le regard en debut de bloc
+   sans ajouter un mot. */
+h2 {
+  font-size: 1.25rem; font-weight: 750; letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 0.6rem; margin: 2rem 0 0.9rem;
+}
+h2::before {
+  content: ''; width: 4px; height: 1.1em; flex: none;
+  background: var(--accent); border-radius: 2px;
+}
+h2 {
+  font-size: 0.78rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.13em; color: var(--papier-mat);
+  margin: 2.2rem 0 0.8rem;
+}
+
+/* ---------- champs et boutons ---------- */
+
+.recherche { display: flex; gap: 0.6rem; margin-bottom: 0.5rem; }
+
+/* Le selecteur Titre / Auteur. Il precede le champ parce qu'il se lit comme une phrase :
+   « Titre : Holly ». Place apres, il ressemblerait a un filtre applique au resultat. */
+.recherche select {
+  flex: 0 0 auto; padding: 0.6rem 0.7rem;
+  background: var(--surface); color: var(--papier);
+  border: 1px solid var(--trait); border-radius: var(--r);
+  font: inherit; font-size: 0.9rem;
+}
+.recherche select:focus-visible { outline: 2px solid var(--chaud); outline-offset: 1px; }
+
+/* Visible pour un lecteur d'ecran, absent a l'oeil. `display: none` le retirerait aussi
+   de l'arbre d'accessibilite, ce qui laisserait le selecteur sans etiquette. */
+.visuellement-cache {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+/* TOUS les champs de saisie, sauf les cases et boutons radio.
+   La liste enumerait auparavant `text`, `password` et `search`. Un champ `url` — le seul
+   du projet, dans les reglages Rustatio — tombait donc sur le style par defaut du
+   navigateur : fond blanc, texte noir, en plein theme sombre. Une liste d'exceptions
+   vieillit mal ; une exclusion, non. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]) {
+  flex: 1; min-width: 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--surface); color: var(--papier);
+  border: 1px solid var(--trait); border-radius: var(--r);
+  font: inherit;
+}
+input:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--chaud); outline-offset: 2px;
+}
+
+button {
+  padding: 0.6rem 1rem;
+  background: var(--surface-2); color: var(--papier);
+  border: 1px solid var(--trait); border-radius: var(--r);
+  font: inherit; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--papier-mat); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+/* L'ACCENT DE MARQUE, ET NON `--chaud`. Cette derniere veut dire « en cache » : la
+   reutiliser pour tout bouton principal faisait porter un sens a une decoration, et
+   deux boutons voisins semblaient annoncer un etat. */
+button.principal {
+  background: var(--accent); color: var(--accent-encre); border-color: var(--accent);
+  font-weight: 600; border-radius: var(--r-moyen);
+  box-shadow: 0 6px 18px var(--lueur);
+}
+button.principal:hover:not(:disabled) {
+  background: var(--accent-2); border-color: var(--accent-2); transform: translateY(-1px);
+}
+button.principal:active:not(:disabled) { transform: translateY(0); }
+button.discret { background: none; font-size: 0.82rem; padding: 0.35rem 0.6rem; }
+
+/* ---------- catalogue ---------- */
+
+.grille {
+  display: grid; gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  margin-top: 1.25rem;
+}
+.fiche { text-decoration: none; color: inherit; display: block; }
+.fiche img {
+  width: 100%; aspect-ratio: 2/3; object-fit: cover;
+  border-radius: var(--r-moyen); background: var(--surface-2);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  border: 1px solid var(--trait);
+}
+.fiche .sans-image {
+  width: 100%; aspect-ratio: 2/3; border-radius: var(--r);
+  background: var(--surface-2); border: 1px solid var(--trait);
+}
+.fiche b { display: block; font-weight: 550; font-size: 0.88rem; margin-top: 0.45rem; }
+.fiche small { color: var(--papier-mat); font-family: var(--mesure); font-size: 0.72rem; }
+.fiche:hover img, .fiche:focus-visible img { border-color: var(--chaud); }
+
+/* ---------- entete d'oeuvre ---------- */
+
+.oeuvre { display: grid; grid-template-columns: 150px 1fr; gap: 1.5rem; align-items: start; }
+.oeuvre img { width: 100%; border-radius: var(--r); border: 1px solid var(--trait); }
+.oeuvre .titres { color: var(--papier-mat); font-size: 0.85rem; }
+.oeuvre p { color: var(--papier-mat); font-size: 0.9rem; }
+
+/* ---------- releases ---------- */
+
+.release {
+  display: grid;
+  /* La premiere colonne porte les ETATS, pas une couverture. Elle doit tenir « pas en
+     cache » sur UNE ligne : en pastille arrondie, le texte s'y coupait en deux. */
+  grid-template-columns: 8.5rem 1fr auto;
+  gap: 1rem; align-items: start;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--surface); border: 1px solid var(--trait);
+  border-radius: var(--r-grand);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+/* LE TITRE D'ABORD, le reste ensuite. Tout etait au meme poids : l'oeil ne savait pas
+   ou se poser dans une liste de trente lignes. */
+.release .nom {
+  font-size: 1.05rem; font-weight: 650; letter-spacing: -0.01em;
+  line-height: 1.25; word-break: break-word;
+}
+.release .mesures {
+  font-family: var(--mesure); font-size: 0.76rem; color: var(--papier-mat);
+  text-align: right; white-space: nowrap;
+}
+
+.puces { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+.puce {
+  font-family: var(--mesure); font-size: 0.7rem;
+  padding: 0.12rem 0.5rem; border-radius: 99px;
+  border: 1px solid var(--trait); color: var(--papier-mat);
+}
+.puce.pack { border-color: var(--chaud); color: var(--chaud); }
+
+/* --- indicateurs d'etat : forme + couleur + libelle, jamais la couleur seule --- */
+.etats { display: flex; flex-direction: column; gap: 0.3rem; }
+.etat {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-family: var(--mesure); font-size: 0.68rem; color: var(--papier-mat);
+  padding: 0.15rem 0.55rem; border-radius: 99px;
+  background: var(--surface-2); border: 1px solid var(--trait);
+  /* JAMAIS COUPE EN DEUX. Une pastille qui passe a la ligne ne se lit plus d'un coup
+     d'oeil, ce qui est pourtant sa seule raison d'etre. */
+  white-space: nowrap;
+}
+.pastille {
+  width: 9px; height: 9px; border-radius: 50%; flex: none;
+}
+.etat--en-cache .pastille { background: var(--chaud); box-shadow: 0 0 0 3px rgba(240,160,60,0.16); }
+.etat--en-cache { color: var(--chaud); }
+.etat--absent   .pastille { background: none; border: 1.5px solid var(--froid); }
+.etat--inconnu  .pastille { background: none; border: 1.5px dashed var(--creux); }
+
+/* ---------- la tranche : un trait par tome ---------- */
+
+.tranche {
+  display: flex; gap: 1px; align-items: flex-end;
+  height: 34px; margin-top: 0.6rem;
+  padding: 0.25rem; background: var(--surface); border-radius: var(--r);
+  overflow-x: auto;
+}
+.dos {
+  flex: 1 0 3px; min-width: 3px; height: 100%;
+  background: var(--surface-2); border: none; padding: 0; cursor: pointer;
+  border-radius: 1px;
+}
+.dos[data-present="oui"] { background: var(--papier-mat); }
+.dos[aria-pressed="true"] { background: var(--chaud); }
+.dos[data-present="non"] { background: repeating-linear-gradient(
+  45deg, transparent, transparent 2px, var(--alerte) 2px, var(--alerte) 3px); }
+.tranche-legende {
+  font-family: var(--mesure); font-size: 0.7rem; color: var(--papier-mat);
+  margin-top: 0.3rem; display: flex; gap: 1rem; flex-wrap: wrap;
+}
+
+/* ---------- arborescence ---------- */
+
+.fichiers { margin-top: 0.8rem; }
+.fichier {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.25rem 0; font-family: var(--mesure); font-size: 0.78rem;
+}
+.fichier .taille { margin-left: auto; color: var(--papier-mat); }
+.fichier--annexe { color: var(--papier-mat); }
+
+.liens { margin-top: 0.8rem; display: grid; gap: 0.3rem; }
+.liens a { font-family: var(--mesure); font-size: 0.78rem; }
+
+/* ---------- etat des sources ---------- */
+
+.sources {
+  display: flex; flex-wrap: wrap; gap: 0.9rem;
+  font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat);
+  margin-top: 1.5rem; padding-top: 0.8rem; border-top: 1px solid var(--trait);
+  /* L'ESPACE APPARTIENT AU BLOC DE FILTRES, pas a la carte. Signale a l'usage : la
+     premiere release collait aux filtres. Le poser ici marche quel que soit ce qui suit,
+     et entre deux blocs de filtres les marges se fondent — l'ecart n'y change pas. */
+  margin-bottom: 1.1rem;
+}
+.source--echec { color: var(--alerte); }
+/* En attente : sourd, mais PRESENT. Voir ce qu'on attend vaut mieux qu'une page vide. */
+.source--attente { color: var(--creux); opacity: 0.75; }
+
+/* ---------- filtres de resultats ---------- */
+
+/* Les pastilles de source deviennent cliquables : l'affordance existait deja, elle
+   portait deja les comptes, et elle ne coute donc aucune interface nouvelle. */
+.sources button {
+  font-family: var(--mesure); font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  background: none; border: 1px solid transparent; border-radius: var(--r);
+  color: inherit; cursor: pointer;
+}
+.sources button:hover { border-color: var(--trait); }
+.sources button.principal {
+  background: var(--chaud); color: var(--encre); border-color: var(--chaud); font-weight: 600;
+}
+/* UN FILTRE ACTIF SE VOIT, OU QU'IL SOIT. La regle etait portee-limitee a « .sources » :
+   les memes boutons ailleurs — le journal des traces — restaient gris une fois coches, et
+   on ne voyait plus ce qu'on filtrait. Signale a l'usage le 2026-08-29. */
+.filtre-actif,
+button.filtre-actif {
+  border-color: var(--chaud);
+  color: var(--chaud);
+  background: rgba(240, 160, 60, 0.08);
+  font-weight: 600;
+}
+.source--cle-absente { color: var(--creux); }
+
+/* ---------- page Compte : une cle par bloc ---------- */
+
+.groupe-cles { margin-bottom: 1.75rem; }
+
+.cle {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--trait);
+}
+.cle:last-child { border-bottom: 1px solid var(--trait); }
+
+.cle-entete {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+.cle-entete label { font-size: 0.9rem; font-weight: 550; }
+.cle-entete .presence {
+  font-family: var(--mesure); font-size: 0.7rem; color: var(--papier-mat);
+  margin-left: auto; white-space: nowrap;
+}
+.cle input { width: 100%; }
+/* Un bloc peut porter PLUSIEURS champs — l'URL et le jeton de Rustatio, par exemple.
+   Sans cela ils se touchent, et rien ne dit ou finit l'un et ou commence l'autre. */
+.cle input + input, .cle .champ + .champ { margin-top: 0.5rem; }
+.cle .champ > label {
+  display: block; margin-bottom: 0.25rem;
+  font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat);
+}
+
+.cle-verdict {
+  display: flex; align-items: baseline; gap: 0.45rem;
+  font-family: var(--mesure); font-size: 0.74rem;
+  margin-top: 0.4rem; color: var(--papier-mat);
+}
+.cle-verdict .marqueur { flex: none; font-weight: 700; }
+.cle-verdict--ok .marqueur { color: var(--chaud); }
+.cle-verdict--ko .marqueur { color: var(--alerte); }
+.cle-verdict--ko { color: var(--alerte); }
+.cle-verdict .detail { color: var(--papier-mat); }
+
+.barre-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.4rem; }
+
+/* ---------- divers ---------- */
+
+.message { padding: 0.7rem 0.9rem; border-radius: var(--r); border: 1px solid var(--trait); margin: 1rem 0; }
+.message--erreur { border-color: var(--alerte); color: var(--alerte); }
+.message--ok { border-color: var(--chaud); color: var(--chaud); }
+.vide { color: var(--papier-mat); padding: 2rem 0; }
+
+details > summary { cursor: pointer; color: var(--papier-mat); font-size: 0.85rem; }
+details[open] > summary { margin-bottom: 0.5rem; }
+
+/* UNE CARTE, PAS UN FORMULAIRE POSE SUR LE VIDE. Sans surface, les champs flottaient au
+   milieu d'un grand fond sombre et la page paraissait inachevee — c'est la premiere chose
+   que voit quelqu'un qui arrive. */
+.connexion {
+  max-width: 360px; margin: 12vh auto;
+  padding: 2rem 1.75rem 2.25rem;
+  background: var(--verre); backdrop-filter: blur(16px);
+  border: 1px solid var(--trait); border-radius: var(--r-grand);
+  box-shadow: var(--ombre);
+}
+.connexion h1 { margin: 0.6rem 0 0.4rem; font-size: 1.6rem; letter-spacing: -0.02em; }
+.connexion input {
+  border-radius: var(--r-moyen); padding: 0.7rem 0.8rem;
+  background: var(--surface-2); border: 1px solid var(--trait);
+}
+.connexion input:focus { border-color: var(--accent); outline: none; }
+.connexion label { display: block; font-size: 0.8rem; color: var(--papier-mat); margin: 0.9rem 0 0.3rem; }
+.connexion input { width: 100%; }
+.connexion button { width: 100%; margin-top: 1.2rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th { text-align: left; font-weight: 600; color: var(--papier-mat); font-size: 0.72rem;
+     text-transform: uppercase; letter-spacing: 0.1em; padding: 0.4rem 0.6rem 0.4rem 0; }
+td { padding: 0.45rem 0.6rem 0.45rem 0; border-top: 1px solid var(--trait); font-family: var(--mesure); font-size: 0.8rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ---------- visionneuse, en surcouche ---------- */
+
+.visionneuse {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column;
+  background: #0b0c11;   /* plus sombre que le reste : la planche doit primer */
+}
+
+.visionneuse-scene {
+  position: relative; flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+/* Defilement continu : c'est la SCENE qui defile, pas la page dessous. */
+.visionneuse.continu .visionneuse-scene {
+  display: block; overflow-y: auto; overflow-x: hidden;
+}
+
+.planche { display: block; margin: 0 auto; }
+/* Page a page : la planche entiere doit tenir a l'ecran. */
+.visionneuse-scene > .planche { max-height: 100%; max-width: 100%; object-fit: contain; }
+/* Continu : le webtoon se lit en pleine largeur. */
+.visionneuse.continu .planche {
+  max-height: none; max-width: min(100%, 900px); width: 100%; height: auto;
+  margin-bottom: 2px;
+}
+
+/* Zones de clic : invisibles, mais elles sont la moitie de l'ergonomie. */
+.bord {
+  position: absolute; top: 0; bottom: 0; width: 28%;
+  border: none; background: none; cursor: pointer; padding: 0;
+}
+.bord--gauche { left: 0; }
+.bord--droite { right: 0; }
+.bord:focus-visible { outline: 2px solid var(--chaud); outline-offset: -4px; }
+.visionneuse.continu .bord { display: none; }
+
+.lecteur-barre {
+  flex: none;
+  padding: 0.4rem 0.9rem 0.6rem;
+  background: rgba(11, 12, 17, 0.96);
+  border-top: 1px solid var(--trait);
+}
+.lecteur-infos {
+  display: flex; align-items: center; gap: 0.9rem;
+  font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat);
+  margin-top: 0.35rem;
+}
+.lecteur-infos .compteur { color: var(--papier); }
+.lecteur-infos .fin { margin-left: auto; display: flex; gap: 0.4rem; }
+
+/* La tranche, une seconde fois : un trait par planche au lieu d'un par tome. */
+.tranche-pages {
+  display: flex; gap: 1px; align-items: stretch; height: 14px; overflow-x: auto;
+  /* Un rail visible sous les planches non lues : sans lui, elles se confondaient avec
+     le fond de la barre et la tranche semblait s'arreter a la planche courante. */
+  background: rgba(255, 255, 255, 0.06); border-radius: 2px;
+}
+.tranche-pages .dos-page {
+  flex: 1 0 2px; min-width: 2px;
+  background: var(--surface-2); border: none; padding: 0; cursor: pointer;
+  border-radius: 1px;
+}
+.tranche-pages .dos-page[data-vue="oui"] { background: var(--papier-mat); }
+.tranche-pages .dos-page[aria-current="true"] { background: var(--chaud); }
+
+.lecteur-erreur {
+  display: flex; flex-direction: column; align-items: center; gap: 0.8rem;
+  color: var(--papier-mat); font-size: 0.9rem; text-align: center; padding: 2rem;
+}
+
+/* ---------- tableau des tomes ---------- */
+
+.choix-service { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.4rem; }
+.choix-service button[aria-pressed="true"] {
+  border-color: var(--chaud); color: var(--chaud);
+}
+
+.tomes { width: 100%; border-collapse: collapse; margin-top: 0.6rem; }
+.tomes td {
+  padding: 0.3rem 0.5rem 0.3rem 0; border-top: 1px solid var(--trait);
+  font-family: var(--mesure); font-size: 0.78rem; vertical-align: middle;
+}
+.tomes tr:hover td { background: var(--surface); }
+.tomes .col-tome { color: var(--chaud); width: 3.5rem; }
+.tomes .col-nom { color: var(--papier); word-break: break-word; }
+.tomes .col-taille { color: var(--papier-mat); text-align: right; white-space: nowrap; width: 5rem; }
+.tomes .col-actions { text-align: right; white-space: nowrap; width: 12rem; }
+.tomes .col-actions button { margin-left: 0.3rem; }
+.tomes tr.cible td { background: var(--surface-2); }
+
+.pied-selection {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px solid var(--trait);
+  font-family: var(--mesure); font-size: 0.74rem; color: var(--papier-mat);
+}
+
+
+/* Un lien qui AGIT comme un bouton doit en avoir l'air, sans cesser d'etre un lien :
+   « Ouvrir dans Telegram » mene ailleurs, « Telecharger » declenche un enregistrement.
+   Les deux se distinguent des boutons pleins, qui eux restent dans la page. */
+.bouton-lien {
+  display: inline-block;
+  font-family: var(--mesure); font-size: 0.74rem; line-height: 1.2;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--trait); border-radius: var(--r);
+  background: var(--surface-2); color: var(--papier-mat);
+  text-decoration: none; cursor: pointer;
+}
+.bouton-lien:hover, .bouton-lien:focus-visible { border-color: var(--chaud); color: var(--papier); }
+
+/* --- La liseuse ------------------------------------------------------------
+   Une surcouche, comme la visionneuse, mais pour du TEXTE. Les regles qui suivent ne
+   sont pas de la decoration : la longueur de ligne et l'interlignage sont ce qui rend un
+   livre lisible, et une page pleine largeur sur un ecran de bureau est illisible quel que
+   soit le soin mis au reste. */
+.liseuse {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; flex-direction: column;
+  /* `--encre`, et surtout PAS `--fond` : cette variable n'existe pas dans ce projet.
+     `var()` sur un nom inconnu ne resout rien, la surcouche restait transparente et la
+     page passait au travers du texte. Aucune erreur nulle part — juste un ecran
+     illisible. */
+  background: var(--encre);
+  color: var(--papier);
+}
+.liseuse-barre {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 1rem; border-bottom: 1px solid var(--trait);
+  background: var(--surface);
+}
+.liseuse-titre { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.liseuse-position { font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat); white-space: nowrap; }
+
+/* EN SURCOUCHE, PAS DANS LE FLUX. Pose entre la barre et le texte, le sommaire retrecit
+   la colonne de lecture — donc `scrollHeight`, donc le pourcentage enregistre. Ouvrir le
+   sommaire faisait bouger la position sauvegardee sans que rien ne soit lu. */
+.liseuse-zone { position: relative; flex: 1; display: flex; min-height: 0; }
+
+.liseuse-sommaire {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 1;
+  border-bottom: 1px solid var(--trait); background: var(--surface);
+  max-height: 60vh; overflow-y: auto;
+  display: flex; flex-direction: column; align-items: stretch;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+.liseuse-sommaire button { text-align: left; border-radius: 0; border: 0; border-bottom: 1px solid var(--trait); }
+
+/* LE CORPS DU LIVRE. `65ch` est une longueur de ligne de lecture — au-dela, l'oeil perd
+   le debut de la ligne suivante. C'est la seule mesure qui compte vraiment ici. */
+.liseuse-page {
+  flex: 1; overflow-y: auto;
+  padding: 2rem 1.2rem 4rem;
+  font-size: 1.05rem; line-height: 1.7;
+  hyphens: auto;
+}
+.liseuse-page > * { max-width: 65ch; margin-left: auto; margin-right: auto; }
+.liseuse-page p { margin: 0 auto 1em; text-align: justify; }
+.liseuse-page h1, .liseuse-page h2, .liseuse-page h3 { margin: 1.8em auto 0.8em; line-height: 1.3; }
+/* Le livre peut porter n'importe quelle largeur d'image : on la borne, sinon une
+   illustration pleine resolution deborde la colonne. */
+.liseuse-page img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; }
+.liseuse-page a { color: var(--chaud); }
+.liseuse-page blockquote { margin: 1.5em auto; padding-left: 1rem; border-left: 2px solid var(--trait); color: var(--papier-mat); }
+
+.liseuse-pied {
+  display: flex; gap: 0.6rem; justify-content: space-between;
+  padding: 0.6rem 1rem; border-top: 1px solid var(--trait); background: var(--surface);
+}
+
+/* L'edition d'un livre : editeur, annee, pagination. Discrete — elle sert a departager
+   deux lignes identiques, pas a se faire lire en premier. */
+.edition {
+  font-family: var(--mesure); font-size: 0.72rem;
+  color: var(--papier-mat); margin-top: 0.15rem;
+}
+
+/* La provenance : un mot, pas une pastille criarde. Elle renseigne, elle ne classe pas —
+   une release sans mention n'est pas moins bonne, on ne sait simplement pas. */
+.provenance {
+  display: inline-block; margin-top: 0.15rem;
+  font-family: var(--mesure); font-size: 0.68rem;
+  padding: 0.05rem 0.35rem; border-radius: var(--r);
+  border: 1px solid var(--trait); color: var(--papier-mat);
+}
+.provenance--retail { color: var(--chaud); border-color: color-mix(in srgb, var(--chaud) 40%, var(--trait)); }
+
+/* La sentinelle du defilement : elle n'a rien a montrer, seulement une hauteur pour
+   pouvoir entrer dans le champ de vision. */
+.sentinelle { height: 1px; }
+
+/* --- La vitrine ------------------------------------------------------------
+   Deux portes par ligne, chacune portant un motif tire de SA PROPRE matiere : le sens de
+   lecture japonais, la trame d'impression du comic book, le gaufrier franco-belge, un
+   bloc de texte, une forme d'onde. Aucun n'est une vignette decorative — chacun dit ce
+   qu'on trouvera derriere.
+
+   Les motifs sont dessines en SVG et integres a la feuille : la CSP n'autorise aucune
+   image externe, et c'est tres bien ainsi — rien a heberger, net a toute taille, quelques
+   centaines d'octets.
+
+   MONOCHROMES et discrets, dans le ton papier deja en place. L'ambre reste reserve au
+   survol et au focus : cinq couleurs vives feraient un tableau de bord, pas une
+   librairie. */
+.familles {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 0.9rem; margin-top: 1.5rem;
+}
+.famille {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 0.25rem;
+  min-height: 170px; padding: 1.35rem;
+  background: var(--surface); border: 1px solid var(--trait);
+  border-radius: var(--r-grand); box-shadow: var(--ombre);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+  text-decoration: none; color: var(--papier);
+  transition: border-color 0.15s ease;
+}
+/* Le motif vit sur un calque a part : il peut ainsi rester tres pale sans delaver le
+   texte pose dessus. */
+.famille::before {
+  content: ''; position: absolute; inset: 0;
+  opacity: 0.10; pointer-events: none;
+  /* Le motif tient ENTIER dans la carte. Une grille rognee en plein milieu d'une case
+     n'est plus une grille, c'est une texture. */
+  background-repeat: no-repeat; background-position: right 1rem center;
+  background-size: auto 68%;
+}
+.famille:hover, .famille:focus-visible { border-color: var(--chaud); }
+.famille:hover::before, .famille:focus-visible::before { opacity: 0.16; }
+.famille-nom { font-size: 1.15rem; font-weight: 600; position: relative; }
+.famille-detail {
+  font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat);
+  position: relative;
+}
+.famille .puce { position: relative; align-self: flex-start; margin-top: 0.2rem; }
+
+/* Une famille seule sur sa ligne prend toute la largeur plutot que de laisser un trou. */
+.famille:last-child:nth-child(odd) { grid-column: 1 / -1; min-height: 110px; }
+
+/* Mangas : des cases qui grandissent VERS LA DROITE — le sens de lecture japonais. */
+.famille[data-famille="mangas"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='100'%3E%3Cg fill='none' stroke='%23e8e4dc' stroke-width='3'%3E%3Crect x='6' y='34' width='28' height='30'/%3E%3Crect x='42' y='24' width='34' height='52'/%3E%3Crect x='84' y='10' width='40' height='80'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Comics : le point Ben-Day, la trame de l'impression americaine — en degrade,
+   du plus fin au plus gros, comme un aplat de couleur monte a l'imprimerie. */
+.famille[data-famille="comics"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='156' height='104'%3E%3Cg fill='%23e8e4dc'%3E%3Ccircle cx='10' cy='10' r='1.1'/%3E%3Ccircle cx='27' cy='10' r='1.7'/%3E%3Ccircle cx='44' cy='10' r='2.2'/%3E%3Ccircle cx='61' cy='10' r='2.8'/%3E%3Ccircle cx='78' cy='10' r='3.3'/%3E%3Ccircle cx='95' cy='10' r='3.9'/%3E%3Ccircle cx='112' cy='10' r='4.4'/%3E%3Ccircle cx='129' cy='10' r='5.0'/%3E%3Ccircle cx='10' cy='27' r='1.1'/%3E%3Ccircle cx='27' cy='27' r='1.7'/%3E%3Ccircle cx='44' cy='27' r='2.2'/%3E%3Ccircle cx='61' cy='27' r='2.8'/%3E%3Ccircle cx='78' cy='27' r='3.3'/%3E%3Ccircle cx='95' cy='27' r='3.9'/%3E%3Ccircle cx='112' cy='27' r='4.4'/%3E%3Ccircle cx='129' cy='27' r='5.0'/%3E%3Ccircle cx='10' cy='44' r='1.1'/%3E%3Ccircle cx='27' cy='44' r='1.7'/%3E%3Ccircle cx='44' cy='44' r='2.2'/%3E%3Ccircle cx='61' cy='44' r='2.8'/%3E%3Ccircle cx='78' cy='44' r='3.3'/%3E%3Ccircle cx='95' cy='44' r='3.9'/%3E%3Ccircle cx='112' cy='44' r='4.4'/%3E%3Ccircle cx='129' cy='44' r='5.0'/%3E%3Ccircle cx='10' cy='61' r='1.1'/%3E%3Ccircle cx='27' cy='61' r='1.7'/%3E%3Ccircle cx='44' cy='61' r='2.2'/%3E%3Ccircle cx='61' cy='61' r='2.8'/%3E%3Ccircle cx='78' cy='61' r='3.3'/%3E%3Ccircle cx='95' cy='61' r='3.9'/%3E%3Ccircle cx='112' cy='61' r='4.4'/%3E%3Ccircle cx='129' cy='61' r='5.0'/%3E%3Ccircle cx='10' cy='78' r='1.1'/%3E%3Ccircle cx='27' cy='78' r='1.7'/%3E%3Ccircle cx='44' cy='78' r='2.2'/%3E%3Ccircle cx='61' cy='78' r='2.8'/%3E%3Ccircle cx='78' cy='78' r='3.3'/%3E%3Ccircle cx='95' cy='78' r='3.9'/%3E%3Ccircle cx='112' cy='78' r='4.4'/%3E%3Ccircle cx='129' cy='78' r='5.0'/%3E%3Ccircle cx='10' cy='95' r='1.1'/%3E%3Ccircle cx='27' cy='95' r='1.7'/%3E%3Ccircle cx='44' cy='95' r='2.2'/%3E%3Ccircle cx='61' cy='95' r='2.8'/%3E%3Ccircle cx='78' cy='95' r='3.3'/%3E%3Ccircle cx='95' cy='95' r='3.9'/%3E%3Ccircle cx='112' cy='95' r='4.4'/%3E%3Ccircle cx='129' cy='95' r='5.0'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* BD : le GAUFRIER, la grille stricte que la tradition franco-belge nomme elle-meme. */
+.famille[data-famille="bd"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='100'%3E%3Cg fill='none' stroke='%23e8e4dc' stroke-width='3'%3E%3Crect x='6' y='6' width='28' height='26'/%3E%3Crect x='40' y='6' width='28' height='26'/%3E%3Crect x='74' y='6' width='28' height='26'/%3E%3Crect x='108' y='6' width='26' height='26'/%3E%3Crect x='6' y='38' width='28' height='26'/%3E%3Crect x='40' y='38' width='28' height='26'/%3E%3Crect x='74' y='38' width='28' height='26'/%3E%3Crect x='108' y='38' width='26' height='26'/%3E%3Crect x='6' y='70' width='28' height='26'/%3E%3Crect x='40' y='70' width='28' height='26'/%3E%3Crect x='74' y='70' width='28' height='26'/%3E%3Crect x='108' y='70' width='26' height='26'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Livres : un bloc de lignes justifiees — une page de texte, vue de loin. */
+.famille[data-famille="livres"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='100'%3E%3Cg fill='%23e8e4dc'%3E%3Crect x='10' y='12' width='118' height='5'/%3E%3Crect x='10' y='26' width='118' height='5'/%3E%3Crect x='10' y='40' width='118' height='5'/%3E%3Crect x='10' y='54' width='118' height='5'/%3E%3Crect x='10' y='68' width='118' height='5'/%3E%3Crect x='10' y='82' width='72' height='5'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* Audiobook : une forme d'onde. Du son, pas des planches — et la carte le dit aussi. */
+.famille[data-famille="audio"]::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='100'%3E%3Cg fill='%23e8e4dc'%3E%3Crect x='6' y='44' width='5' height='12'/%3E%3Crect x='18' y='34' width='5' height='32'/%3E%3Crect x='30' y='20' width='5' height='60'/%3E%3Crect x='42' y='38' width='5' height='24'/%3E%3Crect x='54' y='8' width='5' height='84'/%3E%3Crect x='66' y='30' width='5' height='40'/%3E%3Crect x='78' y='42' width='5' height='16'/%3E%3Crect x='90' y='24' width='5' height='52'/%3E%3Crect x='102' y='36' width='5' height='28'/%3E%3Crect x='114' y='14' width='5' height='72'/%3E%3Crect x='126' y='40' width='5' height='20'/%3E%3Crect x='138' y='28' width='5' height='44'/%3E%3Crect x='150' y='46' width='5' height='8'/%3E%3Crect x='162' y='32' width='5' height='36'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* --- Surcouche de release ---------------------------------------------------
+   Elle emprunte sa grammaire a la visionneuse : meme fond tres sombre, meme fermeture,
+   meme verrouillage du defilement. Deux surcouches qui ne se ressembleraient pas
+   donneraient l'impression de deux applications. */
+.panneau {
+  position: fixed; inset: 0; z-index: 90;   /* SOUS la visionneuse (100) : elle passe par-dessus */
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  background: rgba(8, 9, 13, 0.78);
+}
+.panneau-boite {
+  width: min(860px, 100%); max-height: min(86vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--trait); border-radius: var(--r);
+  overflow: hidden;
+}
+.panneau-entete {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 0.9rem 1rem; border-bottom: 1px solid var(--trait);
+}
+.panneau-entete > div:first-child { min-width: 0; flex: 1; }
+.panneau-entete .nom { overflow-wrap: anywhere; }
+/* C'est le CORPS qui defile, jamais la page : c'est tout l'interet de la surcouche. */
+.panneau-corps { overflow-y: auto; padding: 0.9rem 1rem 1.2rem; }
+
+/* --- La bibliotheque -------------------------------------------------------
+   Deux objets, deux metiers. La barre d'avancement MONTRE ou l'on en est ; la grille
+   numerotee sert a CHOISIR un tome.
+   Ils ont d'abord ete confondus dans une etagere de dos de tomes : jolie, juste sur
+   l'avancement, mais inutilisable pour atteindre le tome 20 — il fallait compter des
+   traits de sept pixels. Un objet qui fait deux metiers en rate au moins un. */
+.oeuvre-suivie {
+  /* `minmax(0, 1fr)` et NON `1fr` : en grid, `1fr` vaut `minmax(auto, 1fr)`, dont le
+     minimum est la taille min-content de la colonne. Une etagere de cent tomes y imposait
+     donc sa largeur naturelle — 523 px mesures dans une vue de 390 — et toute la page
+     debordait horizontalement. Ce plancher doit etre explicitement leve. */
+  display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 1rem;
+  padding: 1.1rem 0; border-top: 1px solid var(--trait);
+}
+.oeuvre-suivie .couverture {
+  width: 92px; border-radius: var(--r); display: block; background: var(--surface-2);
+}
+
+/* Pas de couverture (oeuvre venue de la recherche libre) : on dessine un vrai dos de
+   livre plutot qu'un rectangle gris. Il DIT pourquoi il n'y a pas d'image au lieu de
+   faire semblant. */
+.dos-livre {
+  width: 92px; aspect-ratio: 2 / 3; border-radius: var(--r);
+  background: var(--surface-2); border: 1px solid var(--trait);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mesure); font-size: 0.72rem; color: var(--papier-mat);
+  writing-mode: vertical-rl; text-orientation: mixed;
+  padding: 0.7rem 0; overflow: hidden; text-align: center;
+}
+
+/* La barre d'avancement MONTRE, la grille CHOISIT.
+   Les dos de tomes faisaient les deux, et mal le second : compter des traits de 7 px pour
+   trouver le tome 20 n'est pas un outil de selection. Chaque objet fait desormais une
+   seule chose. */
+.avancement {
+  display: flex; height: 10px; margin: 0.55rem 0; border-radius: 5px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.07);
+}
+.avancement .lu { background: var(--papier-mat); }
+/* La part du tome en cours, a sa propre hauteur de progression : elle dit qu'on est
+   dedans, pas qu'on l'a fini. */
+.avancement .encours { background: var(--chaud); }
+
+.tomes-grille {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(2.7rem, 1fr));
+  gap: 0.35rem; margin-top: 0.6rem;
+  /* Une serie de cent tomes ne doit pas repousser le reste de la bibliotheque hors de
+     l'ecran : au-dela, la grille defile chez elle. Le plafond laisse passer un pack
+     courant (une vingtaine de tomes) sans coupure — une derniere rangee tranchee en deux
+     donne l'impression d'un defaut plutot que d'un defilement. */
+  max-height: 17rem; overflow-y: auto;
+}
+.pastille-tome {
+  font-family: var(--mesure); font-size: 0.78rem; line-height: 1;
+  min-height: 2.2rem; padding: 0.35rem 0.2rem;
+  border: 1px solid var(--trait); border-radius: var(--r);
+  background: var(--surface-2); color: var(--papier-mat); cursor: pointer;
+}
+.pastille-tome:hover { border-color: var(--chaud); color: var(--papier); }
+/* Un fichier sans numero porte son nom : il lui faut de la place, et un numero invente
+   serait un mensonge. */
+.pastille-tome.nommee {
+  grid-column: span 3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pastille-tome[data-etat="lu"] { background: var(--papier-mat); color: var(--encre); border-color: transparent; }
+.pastille-tome[data-etat="en-cours"] {
+  border-color: var(--chaud); color: var(--chaud); background: rgba(240, 160, 60, 0.10);
+  font-weight: 700;
+}
+
+.oeuvre-suivie details > summary {
+  font-family: var(--mesure); font-size: 0.74rem; color: var(--papier-mat);
+  cursor: pointer; padding: 0.3rem 0;
+}
+.oeuvre-suivie details > summary:hover { color: var(--papier); }
+.oeuvre-suivie .resume { font-family: var(--mesure); font-size: 0.74rem; color: var(--papier-mat); }
+
+/* --------------------------------------------------------------------------
+   LA SCENE D'ECOUTE. Elle reprend le cadre de la liseuse — meme barre, meme
+   sommaire en surcouche — et ne remplace que ce qui differe : il n'y a pas de
+   colonne de texte a mesurer, seulement un titre de chapitre et des controles.
+   -------------------------------------------------------------------------- */
+/* Le selecteur de vitesse, dans la barre du lecteur. Assez etroit pour ne pas voler la
+   place au titre, assez lisible pour qu'on voie la valeur courante sans cliquer. */
+.ecoute-vitesse {
+  font-size: 0.82rem; padding: 0.3rem 0.4rem;
+  background: none; color: inherit;
+  border: 1px solid var(--trait); border-radius: var(--r);
+}
+
+/* L'affiche se souleve, et c'est le seul endroit ou l'on se permet plus de deux pixels :
+   une couverture EST l'objet qu'on choisit, la faire reagir aide a viser. */
+.fiche:hover img { transform: translateY(-4px) scale(1.02); box-shadow: var(--ombre); }
+
+/* Le relief au survol : deux pixels, pas davantage. Une carte qui bondit distrait de ce
+   qu'elle contient — ici la liste se parcourt vite, et l'oeil doit rester sur le titre. */
+.release:hover { transform: translateY(-2px); border-color: var(--papier-mat); }
+.famille:hover { transform: translateY(-3px); border-color: var(--accent); }
+
+/* La release memorisee : lisible, mais discrete — c'est un renseignement, pas un titre.
+   Elle se tronque plutot que de pousser la ligne, et se lit en entier au survol. */
+.release-memorisee {
+  font-family: var(--mesure); font-size: 0.7rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46ch;
+}
+
+/* Un tableau trop large DEFILE, il ne casse pas la mise en page. Six colonnes et
+   plusieurs boutons ne tiennent pas sur un telephone, et retrecir jusqu'a l'illisible
+   serait pire que de faire glisser. */
+.defilable { overflow-x: auto; }
+
+/* Les actions d'une ligne : compactes, et JAMAIS coupees au milieu d'un libelle. Leur
+   sens complet vit dans `title` et `aria-label` — un signe seul ne s'annonce pas. */
+.actions-compactes { white-space: nowrap; }
+.actions-compactes button {
+  font-size: 0.74rem; padding: 0.25rem 0.45rem; margin-left: 0.25rem;
+}
+
+/* Le titre d'une release est long par nature. Il se tronque, et se lit en entier dans
+   l'infobulle plutot que de pousser les colonnes hors de l'ecran. */
+.tomes--releases .col-nom {
+  max-width: 24rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* L'action qui porte sur la RELEASE, au-dessus de la liste de ses fichiers. */
+.actions-release { margin: 0 0 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.ecoute-scene {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.5rem; padding: 2rem 1.25rem;
+}
+/* Le titre du chapitre est ce qu'on regarde en ecoutant : il porte la taille. */
+.ecoute-piste { margin: 0; text-align: center; font-size: 1.4rem; line-height: 1.3; max-width: 30ch; }
+.ecoute-son { width: min(100%, 46rem); }
+.ecoute-message {
+  color: var(--papier-mat); font-size: 0.85rem;
+  text-align: center; min-height: 1.2em; max-width: 60ch;
+}
+
+/* Un tome qu'AUCUNE release ne sert. Le pointille dit « il manque » ; il reste cliquable,
+   parce que c'est par lui qu'on va chercher la release qui le comblera. Un trou est une
+   invitation, pas une panne — le griser sans plus en ferait un cul-de-sac de plus. */
+.pastille-tome[data-etat='manquant'] {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+/* Le journal des versions. Une colonne de LECTURE : on y lit des phrases, pas des donnees,
+   et une ligne trop longue fatigue avant d'informer. */
+.journal { max-width: 72ch; }
+/* Chaque version est un volet. Le titre reste une CIBLE confortable : on l'ouvre au
+   doigt, pas au pixel. */
+.journal details {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--trait);
+}
+.journal details:first-of-type { margin-top: 0; padding-top: 0; border-top: 0; }
+.journal summary {
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.journal h3 { margin-top: 1.6rem; }
+.journal li { margin: 0.3rem 0; }
+.journal pre {
+  overflow-x: auto;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--trait);
+  border-radius: 6px;
+}
+
+/* Le journal des traces. Une ligne = un appel : l'heure, la source, le reste. Les deux
+   colonnes fixes laissent l'oeil descendre sans sauter d'une ligne a l'autre. */
+.journal-traces { font-family: ui-monospace, monospace; font-size: 0.86rem; }
+.trace {
+  display: grid;
+  grid-template-columns: 5.5rem 7rem 1fr;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--trait);
+}
+.trace-heure { opacity: 0.6; }
+.trace-source { font-weight: 600; }
+.trace-message { overflow-wrap: anywhere; }
+.trace--error .trace-source { color: #e5484d; }
+.trace--warn .trace-source { color: #d9822b; }
+
+/* Un champ de cle et son bouton de revelation, sur la meme ligne. Le champ prend la place
+   qui reste : une passkey est longue, et la tronquer a l'affichage annulerait l'interet de
+   pouvoir la relire. */
+.cle-saisie { display: flex; gap: 0.5rem; align-items: center; }
+.cle-saisie input { flex: 1 1 auto; min-width: 0; }
+.cle-saisie button { flex: 0 0 auto; white-space: nowrap; }
+
+/* ==========================================================================
+   Petits ecrans
+   --------------------------------------------------------------------------
+   Deux paliers seulement : 760px pour la tablette et le telephone en paysage,
+   480px pour le telephone en portrait. Au-dela, on multiplierait les cas sans
+   rien resoudre.
+
+   Le principe qui gouverne tout ce bloc : ce qui est MESURE reste lisible. Les
+   tailles, les seeders, les numeros de tome sont la raison d'etre de cette
+   interface — on prefere empiler que retrecir.
+   ========================================================================== */
+
+@media (max-width: 760px) {
+  main { padding: 1.25rem 0.9rem 4rem; }
+
+  .bandeau { flex-wrap: wrap; gap: 0.6rem 1rem; padding: 0.7rem 0.9rem; }
+  /* La nav passe a la ligne plutot que de defiler : un lien coupe en plein mot
+     (« Se decon ») donne l'impression d'une page cassee, et rien n'indique qu'on
+     pourrait faire glisser la rangee. */
+  .bandeau nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 0.5rem 1.1rem; }
+
+  /* Le champ de recherche prend toute la largeur : c'est le point d'entree de
+     l'application, le comprimer entre deux boutons le rendait inutilisable. */
+  /* La colonne de lecture n'a plus besoin d'etre bornee : l'ecran l'est deja. */
+  .liseuse-page { padding: 1.2rem 1rem 3rem; font-size: 1rem; }
+  .liseuse-barre { flex-wrap: wrap; }
+  .liseuse-titre { flex: 1 1 100%; white-space: normal; }
+  .liseuse-pied button { flex: 1; }
+
+  .recherche { flex-wrap: wrap; }
+  .recherche input[type="text"] { flex: 1 1 100%; min-width: 0; }
+  .recherche button { flex: 1 1 auto; }
+
+  /* Sources et filtres : ils rendent l'attente lisible, donc ils doivent l'etre.
+     Chaque pastille devient une cible tactile, au lieu d'un mot de 0,72 rem
+     colle au suivant. */
+  .sources { gap: 0.4rem 0.9rem; }
+  /* SEULS les filtres portent une bordure. Les compteurs par source sont du texte :
+     leur donner le meme cadre les faisait passer pour des boutons, et on clique sur
+     ce qui a l'air d'un bouton. */
+  .sources button {
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--trait); border-radius: var(--r);
+    font-size: 0.74rem; line-height: 1.3;
+  }
+  .sources > span { font-size: 0.74rem; line-height: 2; }
+
+  .release { grid-template-columns: 1fr; gap: 0.5rem; }
+  .release .mesures { text-align: left; display: flex; gap: 1rem; }
+  /* L'etat passe en ligne au-dessus du titre : en colonne, il volait la moitie
+     de la largeur a ce qu'on cherche a lire. */
+  .release .etats { flex-direction: row; flex-wrap: wrap; gap: 0.6rem; }
+
+  .oeuvre { grid-template-columns: 1fr; }
+  .oeuvre img { max-width: 130px; }
+
+  .choix-service button { flex: 1 1 auto; }
+
+  /* Une table de cinq colonnes est sans espoir sur un telephone. Chaque ligne
+     devient un petit bloc : ce qui identifie le tome en tete, le nom ensuite,
+     les actions en dessous et pleine largeur. */
+  .tomes tr {
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 0.35rem 0.7rem; padding: 0.55rem 0; border-top: 1px solid var(--trait);
+  }
+  .tomes td { border: none; padding: 0; width: auto; }
+  .tomes .col-tome { order: 2; }
+  /* La taille remonte a cote du numero de tome — mais SEULEMENT dans les lignes qui
+     portent des actions. La table d'un pack n'a que deux cellules (nom, taille) et le
+     meme ordre y afficherait la taille avant le nom qu'elle qualifie. */
+  .tomes tr:has(.col-actions) .col-taille { order: 3; }
+  .tomes .col-taille { text-align: left; }
+  .tomes .col-nom { order: 4; flex: 1 1 100%; overflow-wrap: anywhere; }
+  .tomes .col-actions { order: 5; flex: 1 1 100%; text-align: left; }
+  .tomes .col-actions button { margin: 0 0.4rem 0 0; }
+
+  /* Les autres tables gardent leurs colonnes mais defilent au lieu de deborder. */
+  table:not(.tomes) { display: block; overflow-x: auto; white-space: nowrap; }
+
+  /* Plein ecran sur telephone : une feuille entiere donne plus de place a la table des
+     tomes qu'un panneau comprime dans une carte — c'etait deja le defaut d'avant. */
+  .panneau { padding: 0; }
+  .panneau-boite { width: 100%; max-height: 100%; height: 100%; border: none; border-radius: 0; }
+
+  /* Une par ligne : deux portes de 190 px cote a cote seraient illisibles, et le motif
+     n'aurait plus la place de se lire comme un motif. */
+  .familles { grid-template-columns: 1fr; gap: 0.6rem; }
+  .famille { min-height: 118px; padding: 1rem; }
+  .famille:last-child:nth-child(odd) { min-height: 118px; }
+
+  .oeuvre-suivie { grid-template-columns: 64px minmax(0, 1fr); gap: 0.7rem; }
+  .oeuvre-suivie .couverture, .dos-livre { width: 64px; }
+  /* Les pastilles restent des cibles tactiles : c'est tout leur interet par rapport aux
+     dos de tomes qu'elles remplacent. */
+  .tomes-grille { grid-template-columns: repeat(auto-fill, minmax(2.9rem, 1fr)); }
+  .pastille-tome { min-height: 2.5rem; }
+  .oeuvre-suivie .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .oeuvre-suivie .actions button { flex: 1 1 auto; }
+
+  .pied-selection { gap: 0.5rem; }
+  .liens a { word-break: break-all; }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.25rem; }
+  .grille { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 0.7rem; }
+
+  /* Cibles tactiles : en dessous, on vise a cote. */
+  button, .bouton-lien { min-height: 2.4rem; display: inline-flex; align-items: center; }
+  .sources button { min-height: 2rem; }
+
+  /* Le selecteur garde sa ligne avec le champ : les deux forment une seule question.
+     Ce sont les boutons qui passent dessous. */
+  .recherche { flex-wrap: wrap; }
+  .recherche select { flex: 0 0 auto; }
+  .recherche button { flex: 1 1 100%; }
+}
+
+/* --------------------------------------------------------------------------
+   Visionneuse sur petit ecran
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .lecteur-barre {
+    padding: 0.35rem 0.6rem;
+    /* Sous la barre de geste des telephones recents, sans quoi le dernier
+       element est inatteignable. */
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .lecteur-infos { flex-wrap: wrap; gap: 0.3rem 0.6rem; }
+  /* Le nom du fichier sert a se reperer, pas a lire : il s'efface en points de
+     suspension au lieu de pousser la barre sur une ligne de plus. */
+  .lecteur-infos > span:not(.compteur):not(.fin) {
+    flex: 1 1 6rem; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Les trois commandes prennent la largeur, mais gardent leur largeur PROPRE : les
+     etirer a parts egales cassait « Mode : page a page » sur deux lignes et doublait
+     la hauteur de la barre — au detriment de la planche, qui est ce qu'on regarde. */
+  .lecteur-infos .fin { margin-left: 0; width: 100%; justify-content: space-between; }
+  .lecteur-infos .fin button { font-size: 0.68rem; padding: 0.3rem 0.5rem; }
+
+  /* Un tome de deux cents planches faisait six cents pixels de tranche : elle
+     debordait, et le trait courant se retrouvait hors ecran. On la laisse se
+     comprimer pour que TOUTE la progression tienne dans la largeur. */
+  .tranche-pages { height: 18px; overflow-x: hidden; }
+  .tranche-pages .dos-page { min-width: 1px; flex: 1 1 0; }
+
+  /* Les zones de clic laissent le centre libre : sur un telephone, on veut
+     pouvoir agrandir une planche sans tourner la page. */
+  .bord { width: 33%; }
+  .visionneuse.continu .visionneuse-scene { overscroll-behavior: contain; }
+}
