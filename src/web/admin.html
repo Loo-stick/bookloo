@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administration — Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="admin">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html" data-role="admin">Administration</a>
+      <a href="/logs.html" data-role="admin">Log</a>
+      <a href="/changelog.html">Nouveautes</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Comptes</h1>
+    <table>
+      <thead><tr><th>Identifiant</th><th>Role</th><th>Cree le</th><th>Etat</th><th>Actions</th></tr></thead>
+      <tbody id="utilisateurs"></tbody>
+    </table>
+
+    <h2>Creer un compte</h2>
+    <p class="titres">Il n'y a pas d'inscription ouverte : sur une application exposee sur Internet, un formulaire public est une invitation.</p>
+    <label for="nouveau-login">Identifiant</label>
+    <input type="text" id="nouveau-login" autocomplete="off">
+    <label for="nouveau-mdp">Mot de passe</label>
+    <input type="password" id="nouveau-mdp">
+    <label for="nouveau-role">Role</label>
+    <input type="text" id="nouveau-role" value="utilisateur">
+    <p><button id="creer" class="principal">Creer le compte</button></p>
+
+    <div id="sortie"></div>
+  </main>
+  <script src="/app.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>
