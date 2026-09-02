@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Journal — Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="logs">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/presse.html">Kiosque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html" data-role="admin">Administration</a>
+      <a href="/logs.html" data-role="admin">Log</a>
+      <a href="/changelog.html">Nouveautes</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Journal</h1>
+    <div class="puces" id="filtres"></div>
+    <div id="journal" class="journal-traces"><div class="vide">chargement…</div></div>
+  </main>
+  <script src="/logs.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

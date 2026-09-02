@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kiosque — Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="presse">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/presse.html">Kiosque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html" data-role="admin">Administration</a>
+      <a href="/logs.html" data-role="admin">Log</a>
+      <a href="/changelog.html">Nouveautes</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Kiosque</h1>
+    <div class="choix-service" id="onglets">
+      <button type="button" data-onglet="journaux" aria-pressed="true">Journaux</button>
+      <button type="button" data-onglet="magazines" aria-pressed="false">Magazines</button>
+      <button type="button" data-onglet="titres" aria-pressed="false">Par titre</button>
+    </div>
+    <form class="recherche-presse" id="recherche">
+      <label class="visuellement-cache" for="q">Chercher un titre de presse</label>
+      <input type="search" id="q" placeholder="chercher un titre — « Cahiers du Cinéma »">
+      <button type="submit" class="discret">Chercher</button>
+    </form>
+    <div class="puces" id="sites"></div>
+    <div id="categories" hidden></div>
+    <div id="numeros"><div class="vide">chargement…</div></div>
+  </main>
+  <script src="/kiosque.js"></script>
+  <script src="/presse.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>

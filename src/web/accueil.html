@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book Loo Store</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body data-page="accueil">
+  <header class="bandeau">
+    <a class="marque" href="/accueil.html">Book Loo<span> Store</span></a>
+    <nav>
+      <a href="/accueil.html">Accueil</a>
+      <a href="/bibliotheque.html">Ma bibliotheque</a>
+      <a href="/presse.html">Kiosque</a>
+      <a href="/compte.html">Compte</a>
+      <a href="/admin.html" data-role="admin">Administration</a>
+      <a href="/logs.html" data-role="admin">Log</a>
+      <a href="/changelog.html">Nouveautes</a>
+      <a href="#" id="deconnexion">Se deconnecter</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Que cherchez-vous ?</h1>
+    <p class="titres">Chaque porte interroge ses propres sources. Ce qu'elle sait faire est ecrit dessus.</p>
+    <div id="familles" class="familles"><div class="vide">chargement…</div></div>
+  </main>
+  <script src="/accueil.js"></script>
+  <script src="/nav.js"></script>
+</body>
+</html>
