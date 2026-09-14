@@ -1,0 +1,74 @@
+# Chaine d'integration GITHUB, rangee ici et NON dans .github/workflows/.
+#
+# Forgejo Actions lit lui aussi `.github/workflows/`. Ce fichier y aurait declenche le
+# runner local sur une publication vers ghcr.io, sans jeton et sans raison — un echec
+# repete a chaque push. Le script `scripts/exporter-github.sh` le remet a sa place dans
+# l'export destine a GitHub.
+#
+name: Publier l'image Docker
+
+# Construit et publie l'image sur GitHub Container Registry :
+#   - push sur main        -> tag `latest`
+#   - tag vX.Y.Z           -> tags `X.Y.Z` et `X.Y`
+#
+# Les gens qui s'auto-hebergent n'ont alors qu'un `docker compose up -d` : ils tirent
+# l'image, ils ne la construisent pas. Le telechargement part du CDN de GitHub et non de
+# la machine de l'operateur — l'image pese 386 Mo, et c'est la difference entre servir
+# quelques visiteurs et servir tout le monde.
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+jobs:
+  construire-et-publier:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Recuperer les sources
+        uses: actions/checkout@v4
+
+      - name: S'authentifier aupres de GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Etiquettes et metadonnees
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+
+      # ARM EN PLUS D'AMD64. Signale a l'usage des le premier partage : « no matching
+      # manifest for linux/arm64/v8 ». Un Raspberry Pi, un Mac Apple Silicon ou un VPS ARM
+      # ne trouvaient tout simplement pas d'image.
+      #
+      # QEMU emule l'architecture absente. La construction ARM est LENTE — `npm ci` et
+      # `tsc` tournent sous emulation — mais elle ne se produit qu'a la publication, et
+      # c'est le prix d'une image que tout le monde peut tirer.
+      - name: Preparer l'emulation
+        uses: docker/setup-qemu-action@v3
+
+      - name: Preparer Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construire et publier
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
