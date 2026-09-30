@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+
+# Base et cache : donnees locales, jamais versionnees
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+.env
+config/runtime-settings.json
+
+# Fixtures de sonde NON NETTOYEES : les URL Torznab portent la passkey
+tests/fixtures/*.brut.xml

@@ -1,0 +1,66 @@
+# NOM DE PROJET FIGE, ET C'EST UN FILET.
+#
+# Sans cette ligne, Compose derive le nom du projet du NOM DU DOSSIER. Il en tire ensuite
+# le nom du reseau (`mangaloo_default`) et celui du volume (`mangaloo_mangaloo-etat`) —
+# celui qui porte la base, le cache et les livres rapatries.
+#
+# Renommer le dossier aurait donc, en silence :
+#   - detache le volume, et l'application serait repartie sur une base VIDE ;
+#   - renomme le reseau, et le bot Telegram de /projets/manga-telegram-bot, qui le
+#     rejoint en `external`, n'aurait plus demarre du tout.
+#
+# Avec elle, l'identite Docker ne depend plus du chemin. Le dossier, le depot et le
+# domaine deviennent renommables sans qu'un octet ne bouge cote donnees.
+
+# LE NOM DE PROJET RESTE « mangaloo », ET C'EST VOULU.
+#
+# C'est de lui que Compose tire le volume `mangaloo_mangaloo-etat` — la base, le cache,
+# les livres — et le reseau `mangaloo_default`, que le bot Telegram rejoint en `external`.
+# Le changer demande de migrer le volume et de prevenir l'autre projet : c'est une etape
+# a part, deliberee, pas un effet de bord d'un renommage.
+name: mangaloo
+
+services:
+  bookloo:
+    build: .
+    # L'IMAGE PUBLIEE, pas un nom local. Qui clone ce depot construira quand meme
+    # (le `build` ci-dessus le permet) ; qui ne veut que l'image trouvera la recette
+    # dans le README, sans `build`, et tirera depuis le CDN de GitHub.
+    image: ghcr.io/loo-stick/bookloo:latest
+    container_name: bookloo
+    restart: unless-stopped
+    # Le nipogi n'a que ~6 Go de marge pour 32 conteneurs : on borne, et on interdit le
+    # swap. Sans memswap_limit, le plafond ne sert a rien — les pages partent en swap et
+    # la machine pagine jusqu'a la paralysie.
+    mem_limit: 512m
+    memswap_limit: 512m
+    # Expose UNIQUEMENT sur la boucle locale : c'est cloudflared qui fait la facade.
+    ports:
+      - "127.0.0.1:${PORT:-8480}:${PORT:-8480}"
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-8480}
+      - ADMIN_LOGIN=${ADMIN_LOGIN:-admin}
+    volumes:
+      # Bind-monte : corriger l'adresse d'un tracker ne demande ni rebuild ni
+      # redemarrage, le fichier est relu a chaud.
+      - ./config:/app/config
+      - mangaloo-etat:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:'+(process.env.PORT||8480)+'/sante',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mangaloo-etat:
